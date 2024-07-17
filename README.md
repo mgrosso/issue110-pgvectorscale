@@ -1,3 +1,4 @@
+# steps and data for issue https://github.com/timescale/pgvectorscale/issues/110
 ## steps to replicate
 
 ### 1. create the table
@@ -79,7 +80,36 @@ explain analyze SELECT x.* FROM
 WHERE filter1 = true AND filter2 = true
 LIMIT 10
 ;
+ Limit  (cost=166.46..200.16 rows=10 width=53) (actual time=32.179..111.739 rows=10 loops=1)
+   ->  Subquery Scan on x  (cost=166.46..27773.50 rows=8192 width=53) (actual time=32.178..111.737 rows=10 loops=1)
+         Filter: (x.filter1 AND x.filter2)
+         Rows Removed by Filter: 12284
+         ->  Limit  (cost=166.46..27445.82 rows=32768 width=53) (actual time=0.569..110.969 rows=12294 loops=1)
+               ->  Index Scan using test_embedding_dim128_diskann_109 on test_embedding_dim128  (cost=166.46..27445.82 rows=32768 width=53) 
+(actual time=0.568..109.792 rows=12294 loops=1)
+                     Order By: (embedding <=> '[0.11,0.29,0.61,1,0.11,0.29,0.61,1,0.11,0.29,0.61,1,0.11,0.29,0.61,1,0.11,0.29,0.61,1,0.11,0.
+Time: 112.176 ms
+-- edit out the explain analyze and get good results:
+admin=# \e
+  id  |     metadata      |   contents   |       distance       | filter1 | filter2 
+------+-------------------+--------------+----------------------+---------+---------
+ 1091 | {"name": "test3"} | hello world3 | 0.014066888074134809 | t       | t
+ 1179 | {"name": "test3"} | hello world3 | 0.014081254443535252 | t       | t
+ 1307 | {"name": "test3"} | hello world3 | 0.014152256636207783 | t       | t
+ 1651 | {"name": "test3"} | hello world3 | 0.014112833578850514 | t       | t
+ 1731 | {"name": "test3"} | hello world3 | 0.014115083649736127 | t       | t
+ 2523 | {"name": "test3"} | hello world3 |  0.01411739768316933 | t       | t
+ 3211 | {"name": "test3"} | hello world3 | 0.014095071055568065 | t       | t
+ 4563 | {"name": "test3"} | hello world3 | 0.014041616067090756 | t       | t
+ 5227 | {"name": "test3"} | hello world3 | 0.014034632043531725 | t       | t
+ 1803 | {"name": "test3"} | hello world3 | 0.013970802748260458 | t       | t
+(10 rows)
+
+Time: 110.385 ms
+
 ```
+
+see https://github.com/timescale/pgvectorscale/issues/109#issuecomment-2227620018 for list of rows returned from the index scan at various `num_neighbors` values.
 
 ## steps to regenerate the test data
 
